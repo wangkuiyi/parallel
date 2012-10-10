@@ -17,7 +17,7 @@ func For(low, high, step int, worker func(index int)) {
 	}
 
 	for i := low; i < high; i += step {
-		<- sem
+		<-sem
 	}
 }
 
@@ -32,6 +32,6 @@ func Do(workers ...func()) {
 	}
 
 	for i := 0; i < len(workers); i++ {
-		<- sem
+		<-sem
 	}
 }
