@@ -10,6 +10,19 @@ func TestFor(t *testing.T) {
 	}
 }
 
+func TestNestedFor(t *testing.T) {
+	m := make([]int, 4)
+	For(0, 2, 1, func(i int) {
+		For(0, 2, 1, func(j int) {
+			m[i*2+j] = i*2 + j
+		})
+	})
+
+	if m[0] != 0 || m[1] != 1 || m[2] != 2 || m[3] != 3 {
+		t.Errorf("Failed setting arry m using For\n")
+	}
+}
+
 func TestDo(t *testing.T) {
 	m := make([]int, 4)
 	Do(
