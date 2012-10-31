@@ -1,6 +1,10 @@
 package parallel
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+	"reflect"
+)
 
 func For(low, high, step int, worker func(index int)) {
 	if low > high {
@@ -21,17 +25,56 @@ func For(low, high, step int, worker func(index int)) {
 	}
 }
 
-func Do(workers ...func()) {
-	sem := make(chan int, len(workers))
+// Do accepts a varadic parameter of functions and execute them in
+// parallel.  These functions must have no parameter, and return
+// either nothing or an error.  For examples, please refer to
+// corresponding unit test.
+func Do(functions ...interface{}) error {
+	t := make([]reflect.Type, len(functions))
 
-	for _, worker := range workers {
-		go func(w func()) {
-			w()
-			sem <- 1
-		}(worker)
+	for i, f := range functions {
+		t[i] = reflect.TypeOf(f)
+		if t[i].Kind() != reflect.Func {
+			return fmt.Errorf("The #%d param of Do is not a function", i+1)
+		}
+		if t[i].NumIn() != 0 {
+			return fmt.Errorf(
+				"The #%d param of Do is not a function with out param", i+1)
+		}
+		if t[i].NumOut() > 1 {
+			return fmt.Errorf(
+				"The #%d param of Do must return nothing or an error", i+1)
+		}
 	}
 
-	for i := 0; i < len(workers); i++ {
+	// sem has sufficiently large buffer that prevents blocking.
+	sem := make(chan int, len(functions))
+	errs := make([]error, len(functions))
+
+	for i, f := range functions {
+		v := reflect.ValueOf(f)
+		go func(v reflect.Value, i int) {
+			if t[i].NumOut() == 0 { // f returns nothing
+				v.Call(nil)
+			} else { // f returns an error
+				r := v.Call(nil)
+				if r[0].Interface() != nil {
+					errs[i] = r[0].Interface().(error)
+				}
+			}
+			sem <- 1
+		}(v, i)
+	}
+
+	for i := 0; i < len(functions); i++ {
 		<-sem
 	}
+
+	r := ""
+	for _, e := range errs {
+		if e != nil {
+			r = r + fmt.Sprintf("%v\n", e)
+		}
+	}
+	return errors.New(r)
 }

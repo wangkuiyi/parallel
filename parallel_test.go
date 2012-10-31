@@ -1,6 +1,9 @@
 package parallel
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
 func TestFor(t *testing.T) {
 	m := make([]int, 4)
@@ -25,11 +28,21 @@ func TestNestedFor(t *testing.T) {
 
 func TestDo(t *testing.T) {
 	m := make([]int, 4)
-	Do(
-		func() { m[0] = 0 },
-		func() { m[1] = 1 },
-		func() { m[2] = 2 },
+
+	e := Do(
+		func() error { m[0] = 0; return fmt.Errorf("First error") },
+		func() error { m[1] = 1; return nil },
+		func() error { m[2] = 2; return fmt.Errorf("Second error") },
 		func() { m[3] = 3 })
+
+	if e == nil {
+		t.Errorf("Failed capturing errors")
+	}
+
+	if e.Error() != "First error\nSecond error\n" {
+		t.Errorf("Captured wrong errors")
+	}
+
 	if m[0] != 0 || m[1] != 1 || m[2] != 2 || m[3] != 3 {
 		t.Errorf("Failed setting arry m using Do. m=%v\n", m)
 	}
