@@ -7,6 +7,12 @@ import (
 	"sync"
 )
 
+// For accepts a worker function with an integer paramter and returns
+// either nothing or an error.  It then makes (high-low)/step
+// simultaneous invocations to the worker.  These simultaneous
+// invocations mimic the for loop: i := low; i < high; i += step,
+// where i is the parameter passed to worker.  For examples, please
+// refer to unit tests.
 func For(low, high, step int, worker interface{}) error {
 	if low > high {
 		return fmt.Errorf("low (%d) > high (%d)", low, high)
