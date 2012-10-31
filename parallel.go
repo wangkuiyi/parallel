@@ -4,25 +4,61 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"sync"
 )
 
-func For(low, high, step int, worker func(index int)) {
+func For(low, high, step int, worker interface{}) error {
 	if low > high {
-		panic(fmt.Sprintf("low (%d) > high (%d)", low, high))
+		return fmt.Errorf("low (%d) > high (%d)", low, high)
+	}
+	if step <= 0 {
+		return fmt.Errorf("step (%d) must be positive", step)
 	}
 
+	t := reflect.TypeOf(worker)
+	if t.Kind() != reflect.Func {
+		return errors.New("Worker of For is not a function")
+	}
+	if t.NumIn() != 1 {
+		return errors.New("Worker of For must has 1 param")
+	}
+	if t.In(0).Kind() != reflect.Int {
+		return errors.New("Worker of For must has a int param")
+	}
+	if t.NumOut() > 1 {
+		return errors.New("Worker of For must return nothing or an error")
+	}
+
+	// sem has sufficiently large buffer that prevents blocking.
 	sem := make(chan int, high-low)
+	v := reflect.ValueOf(worker)
+	var errs string
+	var mutex sync.Mutex
 
 	for i := low; i < high; i += step {
-		go func(i int) {
-			worker(i)
+		go func(v reflect.Value, i int) {
+			if t.NumOut() == 0 { // worker returns nothing
+				v.Call([]reflect.Value{reflect.ValueOf(i)})
+			} else { // worker returns an error
+				r := v.Call([]reflect.Value{reflect.ValueOf(i)})
+				if r[0].Interface() != nil {
+					mutex.Lock()
+					defer mutex.Unlock()
+					errs += fmt.Sprintf("%v\n", r[0].Interface().(error))
+				}
+			}
 			sem <- 1
-		}(i)
+		}(v, i)
 	}
 
 	for i := low; i < high; i += step {
 		<-sem
 	}
+
+	if len(errs) > 0 {
+		return errors.New(errs)
+	}
+	return nil
 }
 
 // Do accepts a varadic parameter of functions and execute them in
