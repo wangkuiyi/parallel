@@ -62,6 +62,9 @@ func For(low, high, step int, worker interface{}) error {
 	if t.NumOut() > 1 {
 		return errors.New("Worker of For must return nothing or an error")
 	}
+	if t.NumOut() == 1 && t.Out(0).Name() != "error" {
+		return errors.New("Return type is not error")
+	}
 
 	// sem has sufficiently large buffer that prevents blocking.
 	sem := make(chan int, high-low)
@@ -114,6 +117,9 @@ func Do(functions ...interface{}) error {
 		if t[i].NumOut() > 1 {
 			return fmt.Errorf(
 				"The #%d param of Do must return nothing or an error", i+1)
+		}
+		if t[i].NumOut() == 1 && t[i].Out(0).Name() != "error" {
+			return errors.New("Return type is not error")
 		}
 	}
 
