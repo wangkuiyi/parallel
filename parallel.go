@@ -146,5 +146,9 @@ func Do(functions ...interface{}) error {
 			r = r + fmt.Sprintf("%v\n", e)
 		}
 	}
-	return errors.New(r)
+
+	if len(r) > 0 {
+		return errors.New(r)
+	}
+	return nil
 }
