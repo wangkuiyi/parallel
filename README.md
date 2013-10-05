@@ -1,4 +1,9 @@
-# Parallel Package For Go
+# Parallel
+
+![logo](doc/parallel.png)
+[![Build Status](https://travis-ci.org/wangkuiyi/parallel.png?branch=master)](https://travis-ci.org/wangkuiyi/parallel)
+
+## What Is It?
 
 This package provides OpenMP like syntax for Go.
 
