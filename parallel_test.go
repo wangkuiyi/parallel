@@ -81,7 +81,8 @@ func ExampleRangeMap() error {
 
 func TestRangeMap(t *testing.T) {
 	e := ExampleRangeMap()
-	if fmt.Sprint(e) != "apple:2\norange:1\n" {
-		t.Errorf("Expecting %s, got %s", "apple:2\norange:1\n", fmt.Sprint(e))
+	if fmt.Sprint(e) != "apple:2\norange:1\n" &&
+		fmt.Sprint(e) != "orange:1\napple:2\n" {
+		t.Errorf("Unexpected return %s", fmt.Sprint(e))
 	}
 }
