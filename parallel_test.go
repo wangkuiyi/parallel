@@ -2,6 +2,7 @@ package parallel
 
 import (
 	"fmt"
+	"reflect"
 	"testing"
 )
 
@@ -65,5 +66,23 @@ func TestDo(t *testing.T) {
 
 	if m[0] != 0 || m[1] != 1 || m[2] != 2 || m[3] != 3 {
 		t.Errorf("Failed setting arry m using Do. m=%v\n", m)
+	}
+}
+
+func ExampleRangeMap() error {
+	wc := map[string]int{
+		"apple":  2,
+		"orange": 1,
+	}
+	return RangeMap(wc, func(k, v reflect.Value) error {
+		return fmt.Errorf("%s:%d", k.String(), v.Int())
+	})
+}
+
+func TestRangeMap(t *testing.T) {
+	e := ExampleRangeMap()
+	if fmt.Sprint(e) != "apple:2\norange:1\n" &&
+		fmt.Sprint(e) != "orange:1\napple:2\n" {
+		t.Errorf("Unexpected return %s", fmt.Sprint(e))
 	}
 }

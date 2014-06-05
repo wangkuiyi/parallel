@@ -158,3 +158,37 @@ func Do(functions ...interface{}) error {
 	}
 	return nil
 }
+
+// RangeMap calls f for each key-value pairs in map m, and collect
+// non-nil errors returned by f as its return value.
+func RangeMap(m interface{}, f func(k, v reflect.Value) error) error {
+	if reflect.TypeOf(m).Kind() != reflect.Map {
+		panic(fmt.Sprintf("%+v is not a map", m))
+	}
+
+	keys := reflect.ValueOf(m).MapKeys()
+	es := make([]error, len(keys))
+
+	var wg sync.WaitGroup
+	for i, k := range keys {
+		wg.Add(1) // Do not put this line into go func(k,v,i);
+		// otherwise wg.Wait might be executed before
+		// wg.Add(1)
+		go func(k, v reflect.Value, i int) {
+			defer wg.Done()
+			es[i] = f(k, v)
+		}(k, reflect.ValueOf(m).MapIndex(k), i)
+	}
+	wg.Wait()
+
+	r := ""
+	for _, e := range es {
+		if e != nil {
+			r += fmt.Sprintf("%v\n", e)
+		}
+	}
+	if len(r) > 0 {
+		return errors.New(r)
+	}
+	return nil
+}
