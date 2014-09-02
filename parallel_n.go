@@ -19,19 +19,19 @@ func ForN(low, high, step, parallelism int, worker interface{}) error {
 
 	typ := reflect.TypeOf(worker)
 	if typ.Kind() != reflect.Func {
-		return errors.New("parallel.For worker must be a function.")
+		return errors.New("parallel.ForN worker must be a function.")
 	}
 	if typ.NumIn() != 1 {
-		return errors.New("parallel.For worker must have 1 parameter")
+		return errors.New("parallel.ForN worker must have 1 parameter")
 	}
 	if typ.In(0).Kind() != reflect.Int {
-		return errors.New("parallel.For worker must have a int param")
+		return errors.New("parallel.ForN worker must have a int param")
 	}
 	if typ.NumOut() > 1 {
-		return errors.New("parallel.For worker must return nothing or error")
+		return errors.New("parallel.ForN worker must return nothing or error")
 	}
 	if typ.NumOut() == 1 && typ.Out(0).Name() != "error" {
-		return errors.New("parallel.For worker's return type must be error")
+		return errors.New("parallel.ForN worker's return type must be error")
 	}
 
 	chin := make(chan int)
